@@ -81,6 +81,19 @@ router.patch("/ban/:id", async(req,res) => {
   })
 })
 
+router.delete("/:user_id",auth,async (req, res) =>{
+  const user_id = Number(req.params.user_id);
+  let strSql = `Delete from users_events where user_id = ${user_id}`;
+  sqlCon.query(strSql, (err, results) => {
+      if (err) { return res.json(err); }
+      strSql = `Delete from users where user_id = ${user_id}`;
+      sqlCon.query(strSql, (err, results) => {
+          if (err) { return res.json(err); }
+          res.json(results);
+      })
+  })
+})
+
 
 
 module.exports = router;

@@ -42,6 +42,15 @@ router.get("/users/count/:event_id", async (req, res) => {
     })
 })
 
+router.get("/users/:user_id", async (req, res) => {
+    const user_id = Number(req.params.user_id);
+    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${user_id})`;
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err) }
+        res.json(results)
+    })
+})
+
 router.get("/describe", async (req, res) => {
     const strSql = `DESCRIBE events `;
     sqlCon.query(strSql, (err, results) => {
