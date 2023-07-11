@@ -95,6 +95,15 @@ router.post("/",auth, async (req, res) => {
     })
 })
 
+router.post("/joinEvent/:event_id",auth, async (req, res) => {
+    const event_id = Number(req.params.event_id);
+    const strSql = `INSERT INTO users_events VALUES (?,?,?,?)`;
+    sqlCon.query(strSql,[req.tokenData.user_id,event_id, 0, 0], (err, results) => {
+        if (err) { return res.json(err); }
+        res.json(results);
+    })
+})
+
 router.patch("/users/approve", async (req, res) => {
     const user_id = Number(req.body.user_id);
     const event_id = Number(req.body.event_id);
