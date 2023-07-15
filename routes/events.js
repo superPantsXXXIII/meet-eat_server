@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
 
 router.get("/single/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
-    const strSql = `SELECT * FROM events where event_id=${event_id}`;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id=${event_id}) current_paticipants FROM events where event_id=${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
@@ -110,7 +110,7 @@ router.patch("/users/approve", async (req, res) => {
     const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
-        res.json(results)
+        res.json(results) 
     })
 })
 
