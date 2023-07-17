@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
-const {validateEvent} = require("../models/eventModel")
+const { validateEvent } = require("../models/eventModel")
 
 router.get("/", async (req, res) => {
     const strSql = `SELECT * FROM events `;
@@ -73,10 +73,10 @@ router.get("/users/describe", async (req, res) => {
     })
 })
 
-router.post("/",auth, async (req, res) => {
+router.post("/", auth, async (req, res) => {
     const validBody = validateEvent(req.body);
-    if(validBody.error){
-      return res.status(400).json(validBody.error.details);
+    if (validBody.error) {
+        return res.status(400).json(validBody.error.details);
     }
     let strSql = `INSERT INTO events VALUES (null,?,?,?,?,?,?,?)`;
     let { title, city, adress, description, event_date, max_paticipants } = req.body;
@@ -95,26 +95,42 @@ router.post("/",auth, async (req, res) => {
     })
 })
 
-router.post("/joinEvent/:event_id",auth, async (req, res) => {
+router.post("/joinEvent/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
     const strSql = `INSERT INTO users_events VALUES (?,?,?,?)`;
-    sqlCon.query(strSql,[req.tokenData.user_id,event_id, 0, 0], (err, results) => {
+    sqlCon.query(strSql, [req.tokenData.user_id, event_id, 0, 0], (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
+    })
+})
+
+router.put("/:event_id", async (req, res) => {
+    const validBody = validateEvent(req.body);
+    if (validBody.error) {
+        return res.status(400).json(validBody.error.details);
+    }
+    const event_id = Number(req.params.event_id);
+    const strSql = `Update events set title=?,city=?,adress=?,description=?,event_date=?,max_paticipants=? where  event_id = ${event_id}`;
+    let { title, city, adress, description, event_date, max_paticipants } = req.body;
+    sqlCon.query(strSql, [title, city, adress, description,event_date, max_paticipants], (err, results) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.status(201).json(results);
     })
 })
 
 router.patch("/users/approve", async (req, res) => {
     const user_id = Number(req.body.user_id);
     const event_id = Number(req.body.event_id);
-    const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
+    const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`; 
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
-        res.json(results) 
-    })
+        res.json(results)
+    })  
 })
 
-router.delete("/:event_id",auth,async (req, res) =>{
+router.delete("/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
     let strSql = `Delete from users_events where event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {

@@ -94,13 +94,13 @@ router.delete("/:user_id",auth,async (req, res) =>{
   })
 })
 
-router.patch("/update/:id", async(req,res) => {
-  const id = Number(req.params.id);
-  const strSql = `Update users set password='$2b$10$8zaMRqdn.WGStOKP/tEldex3UpbfnpGOgDaIF6/ZDq1pulmcON6Y.' WHERE user_id=${id}`;
-  sqlCon.query(strSql, (err, results) => {
-    if (err) { return res.json(err); }
-    res.json(results);
-  })
-})
+// router.patch("/update/:id", async(req,res) => {
+//   const id = Number(req.params.id);
+//   const strSql = `Update users set password='' WHERE user_id=${id}`;
+//   sqlCon.query(strSql, (err, results) => {
+//     if (err) { return res.json(err); }
+//     res.json(results);
+//   })
+// })
 
 module.exports = router;
