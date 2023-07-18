@@ -5,7 +5,7 @@ const { auth } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel")
 
 router.get("/", async (req, res) => {
-    const strSql = `SELECT * FROM events `;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id = (select event_id from users_events where events.event_id = users_events.event_id)) current_particepants FROM events `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
