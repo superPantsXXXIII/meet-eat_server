@@ -76,10 +76,36 @@ router.post("/login",async(req,res) => {
   })
 })
 
+router.put("/:user_id", async (req, res) => {
+  const validBody = validateUser(req.body);
+  if (validBody.error) {
+      return res.status(400).json(validBody.error.details);
+  }
+  const user_id = Number(req.params.user_id);
+  const strSql = `Update events set name=?,password=?,email=? where  user_id = ${user_id}`;
+  let { name, password, email} = req.body;
+  sqlCon.query(strSql, [name, password, email], (err, results) => {
+      if (err) {
+          return res.status(400).json(err);
+      }
+      res.status(201).json(results);
+  })
+})
+
 router.patch("/ban/:id", async(req,res) => {
   const id = Number(req.params.id);
   const strSql = `Update users set role='banned' WHERE user_id=${id}`;
   sqlCon.query(strSql, (err, results) => {
+    if (err) { return res.json(err); }
+    res.json(results);
+  })
+})
+
+router.patch("/updateRole/:id/:role", async(req,res) => {
+  const id = Number(req.params.id);
+  const newRole = String(req.params.role);
+  const strSql = `Update users set role=? WHERE user_id=?`;
+  sqlCon.query(strSql,[newRole,id], (err, results) => {
     if (err) { return res.json(err); }
     res.json(results);
   })
@@ -98,16 +124,6 @@ router.delete("/:user_id",auth,async (req, res) =>{
   })
 })
 
-router.patch("/updateRole/:id/:role", async(req,res) => {
-  const id = Number(req.params.id);
-  const newRole = String(req.params.role);
-
-  const strSql = `Update users set role=? WHERE user_id=?`;
-  sqlCon.query(strSql,[newRole,id], (err, results) => {
-    if (err) { return res.json(err); }
-    res.json(results);
-  })
-})
 
 // router.patch("/update/:id", async(req,res) => {
 //   const id = Number(req.params.id);
