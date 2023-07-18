@@ -29,6 +29,10 @@ router.get("/userInfo",auth, async(req,res) => {
   })
 })
 
+router.get("/checkToken",auth , async(req,res) => {
+  res.json({user_id:req.tokenData.user_id,role:req.tokenData.role})
+})
+
 router.post("/",async(req,res) => {
   const validBody = validateUser(req.body);
   if(validBody.error){
@@ -67,7 +71,7 @@ router.post("/login",async(req,res) => {
     if(!validPassword){
       return res.status(401).json({err:"Password worng"});
     }
-    const token = createToken(user.user_id);
+    const token = createToken(user.user_id,user.role);
     res.json({token});
   })
 })
@@ -91,6 +95,17 @@ router.delete("/:user_id",auth,async (req, res) =>{
           if (err) { return res.json(err); }
           res.json(results);
       })
+  })
+})
+
+router.patch("/updateRole/:id/:role", async(req,res) => {
+  const id = Number(req.params.id);
+  const newRole = String(req.params.role);
+
+  const strSql = `Update users set role=? WHERE user_id=?`;
+  sqlCon.query(strSql,[newRole,id], (err, results) => {
+    if (err) { return res.json(err); }
+    res.json(results);
   })
 })
 
