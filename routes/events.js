@@ -12,6 +12,15 @@ router.get("/", async (req, res) => {
     })
 })
 
+router.get("/forShow", async (req, res) => {
+    const strSql = `SELECT events.event_id,title,city,adress,description,date_created,event_date,max_paticipants,(SELECT count(*) FROM users_events where event_id = (select event_id from users_events where events.event_id = users_events.event_id)) current_particepants,user_id FROM events,users_events where events.event_id = users_events.event_id`; 
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err); }
+        res.json(results);
+    })
+})
+
+
 router.get("/single/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
     const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id=${event_id}) current_paticipants FROM events where event_id=${event_id}`;
