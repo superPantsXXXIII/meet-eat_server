@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {Subject} = require("rxjs")
+const { Subject } = require("rxjs")
 const queue = new Subject();
 queueSub();
 const sqlCon = require("../db/sqlConnect");
@@ -107,14 +107,37 @@ router.post("/", auth, async (req, res) => {
 })
 
 router.post("/joinEvent/:event_id", auth, async (req, res) => {
-    const event_id = Number(req.params.event_id);
-    const strSql = `INSERT INTO users_events VALUES (?,?,?,?)`;
-    sqlCon.query(strSql, [req.tokenData.user_id, event_id, 0, 0], (err, results) => {
-        if (err) { return res.json(err); }
-        res.json(results);
+    let event_id = Number(req.params.event_id);
+    let strSql = `SELECT count(*) current_paticipants,(SELECT max_paticipants from events  where event_id=${event_id}) max_paticipants FROM users_events where event_id=${event_id}`;
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err) }
+        if (results[0] && results[0].current_paticipants < results[0].max_paticipants) {
+            strSql = `INSERT INTO users_events VALUES (?,?,?,?)`;
+            sqlCon.query(strSql, [req.tokenData.user_id, event_id, 0, 0], (err, results) => {
+                if (err) { return res.json(err); }
+                res.json(results);
+            })
+            queue.next(event_id)
+        }
+        else {
+            res.json({ err: "event maxed out or doesnt exist" });
+        }
     })
-    queue.next(event_id)
 })
+
+async function queueSub() {
+    queue.subscribe((event_id) => {
+        let strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id`;
+        sqlCon.query(strSql, (err, results) => {
+            try {
+                testSendTemplated(results);
+            }
+            catch (err) {
+                console.log(err)
+            }
+        })
+    })
+}
 
 router.put("/:event_id", async (req, res) => {
     const validBody = validateEvent(req.body);
@@ -142,36 +165,35 @@ router.patch("/users/approve", async (req, res) => {
     })
 })
 
-router.delete("/:event_id",auth, async (req, res) => {
+router.delete("/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
-    let strSql = `Delete from users_events where event_id = ${event_id}`;
+    let strSql = `select host from users_events where event_id = ${event_id} and user_id = ${req.tokenData.user_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
-        strSql = `Delete from events where event_id = ${event_id}`;
-        sqlCon.query(strSql, (err, results) => {
-            if (err) { return res.json(err); }
-            res.json(results);
-        })
+        if (results[0] && results[0].host == 1 || req.tokenData.role == "admin") {
+            strSql = `Delete from users_events where event_id = ${event_id}`;
+            sqlCon.query(strSql, (err, results) => {
+                if (err) { return res.json(err); }
+                strSql = `Delete from events where event_id = ${event_id}`;
+                sqlCon.query(strSql, (err, results) => {
+                    if (err) { return res.json(err); }
+                    res.json(results);
+                })
+            })
+        }
+        else {
+            res.json({ err: "unauthorized request" });
+        }
     })
+})
+
+router.get("/testHost/:event_id", auth, async (req, res) => {
+
 })
 
 router.get("/testing_sg", async (req, res) => {
     testSendTemplated();
     return res.json("email sent")
 })
-
-async function  queueSub (){
-    queue.subscribe((event_id)=>{
-        let strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id`;
-        sqlCon.query(strSql, (err, results) => {        
-            try{
-                testSendTemplated(email);
-            }
-            catch(err){
-                 console.log(err)
-            }
-        })
-    })
-}
 
 module.exports = router;
