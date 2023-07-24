@@ -28,8 +28,7 @@ exports.authAdmin = (req,res,next) => {
   if(!token){
     return res.status(401).json({err:"You must send token to this endpoint "});
   }
-  try{
-    
+  try{ 
     let decodeToken = jwt.verify(token, config.secret);
     // בודק שהמשתמש הוא מסוג אדמין
     if(decodeToken.role != "admin"){

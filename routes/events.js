@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
+const {Subject} = require("rxjs")
+const queue = new Subject();
+queueSub();
 const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
-const { validateEvent } = require("../models/eventModel")
+const { validateEvent } = require("../models/eventModel");
+const { testSend, testSendTemplated } = require("../middleware/sendGrid")
 
 router.get("/", async (req, res) => {
-    const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id = (select event_id from users_events where events.event_id = users_events.event_id)) current_particepants FROM events `;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
@@ -13,13 +17,12 @@ router.get("/", async (req, res) => {
 })
 
 router.get("/forShow", async (req, res) => {
-    const strSql = `SELECT events.event_id,title,city,adress,description,date_created,event_date,max_paticipants,(SELECT count(*) FROM users_events where event_id = (select event_id from users_events where events.event_id = users_events.event_id)) current_particepants,user_id FROM events,users_events where events.event_id = users_events.event_id`; 
+    const strSql = `SELECT events.event_id,title,city,adress,description,date_created,event_date,max_paticipants,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants,user_id FROM events,users_events where events.event_id = users_events.event_id`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
     })
 })
-
 
 router.get("/single/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
@@ -37,7 +40,6 @@ router.get("/describe", async (req, res) => {
         res.json(results)
     })
 })
-
 
 router.get("/users", async (req, res) => {
     const strSql = `SELECT * FROM users_events `;
@@ -111,6 +113,7 @@ router.post("/joinEvent/:event_id", auth, async (req, res) => {
         if (err) { return res.json(err); }
         res.json(results);
     })
+    queue.next(event_id)
 })
 
 router.put("/:event_id", async (req, res) => {
@@ -121,7 +124,7 @@ router.put("/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
     const strSql = `Update events set title=?,city=?,adress=?,description=?,event_date=?,max_paticipants=? where  event_id = ${event_id}`;
     let { title, city, adress, description, event_date, max_paticipants } = req.body;
-    sqlCon.query(strSql, [title, city, adress, description,event_date, max_paticipants], (err, results) => {
+    sqlCon.query(strSql, [title, city, adress, description, event_date, max_paticipants], (err, results) => {
         if (err) {
             return res.status(400).json(err);
         }
@@ -132,14 +135,14 @@ router.put("/:event_id", async (req, res) => {
 router.patch("/users/approve", async (req, res) => {
     const user_id = Number(req.body.user_id);
     const event_id = Number(req.body.event_id);
-    const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`; 
+    const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
-    })  
+    })
 })
 
-router.delete("/:event_id", auth, async (req, res) => {
+router.delete("/:event_id",auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
     let strSql = `Delete from users_events where event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {
@@ -152,5 +155,23 @@ router.delete("/:event_id", auth, async (req, res) => {
     })
 })
 
+router.get("/testing_sg", async (req, res) => {
+    testSendTemplated();
+    return res.json("email sent")
+})
+
+async function  queueSub (){
+    queue.subscribe((event_id)=>{
+        let strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id`;
+        sqlCon.query(strSql, (err, results) => {        
+            try{
+                testSendTemplated(email);
+            }
+            catch(err){
+                 console.log(err)
+            }
+        })
+    })
+}
 
 module.exports = router;
