@@ -60,7 +60,7 @@ router.get("/users/count/:event_id", async (req, res) => {
 
 router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const host = req.query.host?"and host = 1":"";
+    const host = req.query.host ? "and host = 1" : "";
     const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${user_id} ${host})`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
@@ -70,7 +70,7 @@ router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
 
 router.get("/users/getParticipants/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
-    const host = req.query.host?"":"and host = 0";
+    const host = req.query.host ? "" : "and host = 0";
     const strSql = `SELECT name,email,approved FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
@@ -191,7 +191,15 @@ router.delete("/:event_id", auth, async (req, res) => {
 
 router.delete("/users/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
-    strSql = `Delete from users_events where event_id = ${event_id} and user_id = ${req.tokenData.user_id}`;
+    const host = Number(req.body.host);
+    let strSql;
+    if (req.tokenData.role == "admin" || host) {
+        const user_id = req.body.user_id;
+        strSql = `Delete from users_events where event_id = ${event_id} and user_id = ${user_id}`;
+    }
+    else {
+        strSql = `Delete from users_events where event_id = ${event_id} and user_id = ${req.tokenData.user_id}`;
+    }
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
