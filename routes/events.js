@@ -71,7 +71,7 @@ router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
 router.get("/users/getParticipants/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
     const host = req.query.host ? "" : "and host = 0";
-    const strSql = `SELECT name,email,approved FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
+    const strSql = `SELECT name,email,approved,host FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
@@ -133,6 +133,7 @@ async function queueSub() {
         sqlCon.query(strSql, (err, results) => {
             try {
                 sendRequestToHost(results);
+                console.log(queue);
             }
             catch (err) {
                 console.log(err)
