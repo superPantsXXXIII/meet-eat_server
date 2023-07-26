@@ -22,7 +22,7 @@ router.get("/describe", async (req, res) => {
 })
 
 router.get("/userInfo", auth, async (req, res) => {
-  const strSql = `SELECT id,name,email FROM users WHERE user_id = ${req.tokenData.user_id}`;
+  const strSql = `SELECT user_id,name,email FROM users WHERE user_id = ${req.tokenData.user_id}`;
   sqlCon.query(strSql, (err, results) => {
     if (err) { return res.json(err); }
     res.json(results);
