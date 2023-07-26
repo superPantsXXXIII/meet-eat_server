@@ -6,7 +6,7 @@ queueSub();
 const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
-const { sendRequestToHost } = require("../middleware/sendGrid")
+const { sendRequestToHost,sendApproval} = require("../middleware/sendGrid")
 
 router.get("/", async (req, res) => {
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events `;
@@ -58,10 +58,9 @@ router.get("/users/count/:event_id", async (req, res) => {
     })
 })
 
-router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
-    const user_id = Number(req.params.user_id);
+router.get("/users/getAllMyEvents",auth, async (req, res) => {
     const host = req.query.host ? "and host = 1" : "";
-    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${user_id} ${host})`;
+    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host})`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
@@ -136,7 +135,7 @@ async function queueSub() {
                 console.log(queue);
             }
             catch (err) {
-                console.log(err)
+                console.log(err);
             }
         })
     })
@@ -208,7 +207,7 @@ router.delete("/users/:event_id", auth, async (req, res) => {
 })
 
 router.get("/testing_sg", async (req, res) => {
-    testSendTemplated();
+    sendApproval();
     return res.json("email sent")
 })
 
