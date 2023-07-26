@@ -60,7 +60,8 @@ router.get("/users/count/:event_id", async (req, res) => {
 
 router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${user_id})`;
+    const host = req.query.host?"and host = 1":"";
+    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${user_id} ${host})`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
@@ -69,7 +70,8 @@ router.get("/users/getAllMyEvents/:user_id", async (req, res) => {
 
 router.get("/users/getParticipants/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
-    const strSql = `SELECT name,email,approved FROM users_events,users where event_id =${event_id} and host = 0 and users.user_id = users_events.user_id `;
+    const host = req.query.host?"":"and host = 0";
+    const strSql = `SELECT name,email,approved FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
