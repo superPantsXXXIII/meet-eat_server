@@ -187,6 +187,15 @@ router.delete("/:event_id", auth, async (req, res) => {
     })
 })
 
+router.delete("/users/:event_id", auth, async (req, res) => {
+    const event_id = Number(req.params.event_id);
+    strSql = `Delete from users_events where event_id = ${event_id} and user_id = ${req.tokenData.user_id}`;
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err); }
+        res.json(results);
+    })
+})
+
 router.get("/testing_sg", async (req, res) => {
     testSendTemplated();
     return res.json("email sent")
