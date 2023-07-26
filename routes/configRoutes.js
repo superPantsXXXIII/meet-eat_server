@@ -11,4 +11,9 @@ exports.routesInit = (app) => {
   app.use("/events",eventsRouter);
   // app.use("/players",playersR);
   // app.use("/api/products",productsRouter);
+
+  //add 404 route
+  app.use("/*",(req,res) =>{
+    res.status(404).json({msg:"Endpoint/page not found, 404"})
+  })
 }

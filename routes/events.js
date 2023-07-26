@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { Subject } = require("rxjs")
 const queue = new Subject();
-queueSub();
 const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
 const { sendRequestToHost,sendApproval} = require("../middleware/sendGrid")
+queueSub();
 
 router.get("/", async (req, res) => {
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events `;
@@ -60,7 +60,7 @@ router.get("/users/count/:event_id", async (req, res) => {
 
 router.get("/users/getAllMyEvents",auth, async (req, res) => {
     const host = req.query.host ? "and host = 1" : "";
-    const strSql = `SELECT * FROM events where event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host})`;
+    const strSql = `SELECT * FROM events,users_events where event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host}) and events.event_id = users_events.event_id`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
