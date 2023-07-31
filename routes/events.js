@@ -5,7 +5,7 @@ const queue = new Subject();
 const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
-const { sendRequestToHost,sendApproval} = require("../middleware/sendGrid")
+const { sendRequestToHost, sendApproval } = require("../middleware/sendGrid")
 queueSub();
 
 router.get("/", async (req, res) => {
@@ -58,7 +58,7 @@ router.get("/users/count/:event_id", async (req, res) => {
     })
 })
 
-router.get("/users/getAllMyEvents",auth, async (req, res) => {
+router.get("/users/getAllMyEvents", auth, async (req, res) => {
     const host = req.query.host ? "and host = 1" : "";
     const strSql = `SELECT * FROM events JOIN users_events ON events.event_id = users_events.event_id WHERE events.event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host})`;
     sqlCon.query(strSql, (err, results) => {
@@ -118,7 +118,8 @@ router.post("/joinEvent/:event_id", auth, async (req, res) => {
                 if (err) { return res.json(err); }
                 res.json(results);
             })
-            queue.next(event_id)
+            const user_id = req.tokenData.user_id;
+            queue.next({ event_id, reqType: "toHostApprove", user_id })
         }
         else {
             res.json({ err: "event maxed out or doesnt exist" });
@@ -127,17 +128,39 @@ router.post("/joinEvent/:event_id", auth, async (req, res) => {
 })
 
 async function queueSub() {
-    queue.subscribe((event_id) => {
-        let strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id`;
-        sqlCon.query(strSql, (err, results) => {
-            try {
-                sendRequestToHost(results);
-                console.log(queue);
-            }
-            catch (err) {
-                console.log(err);
-            }
-        })
+    queue.subscribe((subObject) => {
+        let { user_id, event_id, reqType } = subObject;
+        let strSql;
+        if (reqType == "toHostApprove") {
+            strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id and host = 1`;
+            sqlCon.query(strSql, (err, results) => {
+                if (err) { console.log(err) }
+                const reciverEmail = results[0].email;
+                strSql = `select title from events where event_id = ${event_id}`
+                sqlCon.query(strSql, (err, results) => {
+                    if (err) { console.log(err) }
+                    const title = results[0].title;
+                    strSql = `select email,name from users where user_id = ${user_id}`
+                    sqlCon.query(strSql, (err, results) => {
+                        if (err) { console.log(err) }
+                        sendRequestToHost(reciverEmail,title,results[0].name,results[0].email)
+                    })
+                })
+            })
+        }
+
+        if (reqType == "backAsApproved") {
+            strSql = `select email from users where user_id = ${user_id}`;
+            sqlCon.query(strSql, (err, results) => {
+                if (err) { console.log(err) }
+                const email = results;
+                strSql = `select title from events where event_id = ${event_id}`
+                sqlCon.query(strSql, (err, results) => {
+                    if (err) { console.log(err) }
+                    sendApproval(email, results[0].title)
+                })
+            })
+        }
     })
 }
 
@@ -163,6 +186,7 @@ router.patch("/users/approve", async (req, res) => {
     const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
+        queue.next({ event_id, reqType: "backAsApproved", user_id })
         res.json(results)
     })
 })

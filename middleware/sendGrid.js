@@ -19,15 +19,15 @@ exports.testSend = () =>{
     })
 }
 
-exports.testSendTemplated = (email) =>{
+exports.sendRequestToHost = (emailTo,title,name,userEmail) =>{
     const msg = {
-        to: config.sg_sender,
+        to: config.sg_sender,//emailTo
         from: config.sg_sender,
         templateId: 'd-daed453466674ebd8326832b61e3f845',
         dynamicTemplateData: {
-          title: 'meet and eat',
-          name: 'shay',
-          email: 'example@example.org',
+          title,
+          name,
+          email:userEmail,
         },
       };
     
@@ -37,7 +37,25 @@ exports.testSendTemplated = (email) =>{
     }).catch((error) => {
         console.error(error)
     })
+}
 
+
+exports.sendApproval = (email,title) =>{
+    const msg = {
+        to: email,
+        from: config.sg_sender,
+        templateId: 'd-34cf78aca3d74580b6750caa9504601b',
+        dynamicTemplateData: {
+          title,
+        },
+      };
+    
+    sgMail.send(msg).then((response) => {
+        console.log(response[0].statusCode)
+        console.log(response[0].headers)
+    }).catch((error) => {
+        console.error(error)
+    })
 }
 
 	
