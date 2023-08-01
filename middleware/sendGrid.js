@@ -21,7 +21,7 @@ exports.testSend = () =>{
 
 exports.sendRequestToHost = (emailTo,title,name,userEmail) =>{
     const msg = {
-        to: config.sg_sender,//emailTo
+        to: emailTo,//emailTo
         from: config.sg_sender,
         templateId: 'd-daed453466674ebd8326832b61e3f845',
         dynamicTemplateData: {
