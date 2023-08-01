@@ -67,7 +67,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ err: "Email not found " });
     }
     const user = results[0];
-    if(user.role == "banned"){
+    if (user.role == "banned") {
       return res.status(401).json({ err: "this user has been banned for inapropriate conduct" });
     }
     const validPassword = await bcrypt.compare(password, user.password);
@@ -122,11 +122,14 @@ router.delete("/:user_id", auth, async (req, res) => {
     strSql = `Delete from users where user_id = ${user_id}`;
     sqlCon.query(strSql, (err, results) => {
       if (err) { return res.json(err); }
-      res.json(results);
+      strSql = `Delete from events where event_id not in (select event_id from users_events)`;
+      sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err); }
+        res.json(results);
+      })
     })
   })
 })
-
 
 // router.patch("/update/:id", async(req,res) => {
 //   const id = Number(req.params.id);

@@ -191,7 +191,7 @@ router.patch("/users/approve", async (req, res) => {
     })
 })
 
-router.delete("/:event_id", auth, async (req, res) => {
+router.delete("/deleteEvent/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
     let strSql = `select host from users_events where event_id = ${event_id} and user_id = ${req.tokenData.user_id}`;
     sqlCon.query(strSql, (err, results) => {
@@ -213,7 +213,7 @@ router.delete("/:event_id", auth, async (req, res) => {
     })
 })
 
-router.delete("/users/:event_id", auth, async (req, res) => {
+router.delete("/users/removeUser/:event_id", auth, async (req, res) => {
     const event_id = Number(req.params.event_id);
     const host = Number(req.body.host);
     let strSql;
