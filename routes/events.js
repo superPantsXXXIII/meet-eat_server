@@ -16,6 +16,16 @@ router.get("/", async (req, res) => {
     })
 })
 
+router.get("/loggedIn/:user_id", async (req, res) => {
+    const user_id = Number(req.params.event_id);
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in(select event_id from users_events where user_id = ${user_id})`;
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err); }
+        res.json(results);
+    })
+})
+
+
 router.get("/forShow", async (req, res) => {
     const strSql = `SELECT events.event_id,title,city,adress,description,date_created,event_date,max_paticipants,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants,user_id FROM events,users_events where events.event_id = users_events.event_id`;
     sqlCon.query(strSql, (err, results) => {
@@ -59,8 +69,8 @@ router.get("/users/count/:event_id", async (req, res) => {
 })
 
 router.get("/users/getAllMyEvents", auth, async (req, res) => {
-    const host = req.query.host ? "and host = 1" : "";
-    const strSql = `SELECT * FROM events JOIN users_events ON events.event_id = users_events.event_id WHERE events.event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host})`;
+    const host = req.query.host ? "and host = 1" : "and host = 0";
+    const strSql = `SELECT * FROM events where events.event_id in (SELECT event_id FROM users_events where user_id=${req.tokenData.user_id} ${host})`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)

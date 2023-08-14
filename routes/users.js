@@ -6,7 +6,7 @@ const { validateUser, validateLogin, createToken } = require("../models/userMode
 const { auth } = require("../middleware/auth");
 
 router.get("/", async (req, res) => {
-  const strSql = `SELECT * FROM users `;
+  const strSql = `SELECT user_id,name,email FROM users `;
   sqlCon.query(strSql, (err, results) => {
     if (err) { return res.json(err); }
     res.json(results);
