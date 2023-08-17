@@ -6,6 +6,7 @@ const sqlCon = require("../db/sqlConnect");
 const { auth } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
 const { sendRequestToHost, sendApproval } = require("../middleware/sendGrid")
+const novu = require("../middleware/notification")
 queueSub();
 
 router.get("/", async (req, res) => {
@@ -142,7 +143,7 @@ async function queueSub() {
         let { user_id, event_id, reqType } = subObject;
         let strSql;
         if (reqType == "toHostApprove") {
-            strSql = `select email from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id and host = 1`;
+            strSql = `select email,user_id from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id and host = 1`;
             sqlCon.query(strSql, (err, results) => {
                 if (err) { console.log(err) }
                 const reciverEmail = results[0].email;
@@ -242,6 +243,24 @@ router.delete("/users/removeUser/:event_id", auth, async (req, res) => {
 
 router.get("/testing_sg", async (req, res) => {
     sendApproval();
+    return res.json("email sent")
+})
+
+router.post("/testing_n", async (req, res) => {
+    const user_id = Number(req.body.user_id);
+    const email = req.body.email;
+    await novu.trigger('event-reminder', {          
+            to: {
+                subscriberId: user_id,
+                email: email
+              },
+              payload: {
+                title: `adam's bbq`,
+                eventName: '<REPLACE_WITH_DATA>',
+                eventDate: '<REPLACE_WITH_DATA>',
+                rsvpLink: '<REPLACE_WITH_DATA>'
+              }
+          });
     return res.json("email sent")
 })
 

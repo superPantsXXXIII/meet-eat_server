@@ -4,6 +4,8 @@ const bcrypt = require("bcrypt");
 const sqlCon = require("../db/sqlConnect");
 const { validateUser, validateLogin, createToken } = require("../models/userModel");
 const { auth } = require("../middleware/auth");
+const novu = require("../middleware/notification");
+const { async } = require("rxjs");
 
 router.get("/", async (req, res) => {
   const strSql = `SELECT user_id,name,email,role FROM users `;
@@ -48,9 +50,23 @@ router.post("/", async (req, res) => {
       }
       return res.status(400).json(err);
     }
+    console.log(results);
+    const strSql = `SELECT * FROM users WHERE user_id = ${results.insertId}`;
+    sqlCon.query(strSql, (err, results) => {
+      if (err) { return res.json(err); }
+      subscribe(results[0]);
+    })
     res.status(201).json(results);
   })
 })
+
+async function subscribe(results) {
+  const subscriberId = results.user_id + "";
+  await novu.subscribers.identify(subscriberId, {
+    email: results.email,
+    firstName: results.name,
+  });
+}
 
 router.post("/login", async (req, res) => {
   const validBody = validateLogin(req.body);
