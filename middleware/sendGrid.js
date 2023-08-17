@@ -1,8 +1,8 @@
 const sgMail = require('@sendgrid/mail')
-const {config} = require('../secret/config')
+const { config } = require('../secret/config')
 sgMail.setApiKey(config.sg_api_key)
 
-exports.testSend = () =>{
+exports.testSend = () => {
     const msg = {
         to: config.sg_sender, // Change to your recipient
         from: config.sg_sender, // Change to your verified sender
@@ -10,7 +10,7 @@ exports.testSend = () =>{
         text: 'and easy to do anywhere, even with Node.js',
         html: '<strong>and easy to do anywhere, even with Node.js</strong>',
     }
-    
+
     sgMail.send(msg).then((response) => {
         console.log(response[0].statusCode)
         console.log(response[0].headers)
@@ -19,17 +19,17 @@ exports.testSend = () =>{
     })
 }
 
-exports.sendRequestToHost = (emailTo,title,name,userEmail) =>{
+exports.sendRequestToHost = (emailTo, title, name, userEmail) => {
     const msg = {
         to: emailTo,//emailTo
         from: config.sg_sender,
         templateId: 'd-daed453466674ebd8326832b61e3f845',
         dynamicTemplateData: {
-          title,
-          name,
-          email:userEmail,
+            title,
+            name,
+            email: userEmail,
         },
-      };
+    };
     
     sgMail.send(msg).then((response) => {
         console.log(response[0].statusCode)
@@ -40,16 +40,16 @@ exports.sendRequestToHost = (emailTo,title,name,userEmail) =>{
 }
 
 
-exports.sendApproval = (email,title) =>{
+exports.sendApproval = (email, title) => {
     const msg = {
         to: email,
         from: config.sg_sender,
         templateId: 'd-34cf78aca3d74580b6750caa9504601b',
         dynamicTemplateData: {
-          title,
+            title,
         },
-      };
-    
+    };
+
     sgMail.send(msg).then((response) => {
         console.log(response[0].statusCode)
         console.log(response[0].headers)
@@ -58,4 +58,4 @@ exports.sendApproval = (email,title) =>{
     })
 }
 
-	
+
