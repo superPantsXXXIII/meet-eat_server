@@ -81,7 +81,7 @@ router.get("/users/getAllMyEvents", auth, async (req, res) => {
 router.get("/users/getParticipants/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
     const host = req.query.host ? "" : "and host = 0";
-    const strSql = `SELECT name,email,approved,host FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
+    const strSql = `SELECT users.user_id,name,email,approved,host FROM users_events,users where event_id =${event_id} ${host} and users.user_id = users_events.user_id `;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
@@ -143,18 +143,33 @@ async function queueSub() {
         let { user_id, event_id, reqType } = subObject;
         let strSql;
         if (reqType == "toHostApprove") {
-            strSql = `select email,user_id from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id and host = 1`;
+            strSql = `select email,users.user_id from users,users_events where event_id = ${event_id} and users.user_id = users_events.user_id and host = 1`;
             sqlCon.query(strSql, (err, results) => {
                 if (err) { console.log(err) }
-                const reciverEmail = results[0].email;
+                const reciverEmail = results[0]?.email;
+                const reciverId = results[0]?.user_id;
                 strSql = `select title from events where event_id = ${event_id}`
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
-                    const title = results[0].title;
+                    const title = results[0]?.title;
                     strSql = `select email,name from users where user_id = ${user_id}`
                     sqlCon.query(strSql, (err, results) => {
+                        console.log("dsfgdsg")
                         if (err) { console.log(err) }
-                        sendRequestToHost(reciverEmail,title,results[0].name,results[0].email)
+                        novu.trigger('send-join-request-to-host', {
+                            to: {
+                              subscriberId: reciverId+"",
+                              email: reciverEmail
+                            },
+                            payload: {
+                              title: title,
+                              name: results[0]?.name,
+                              email: results[0]?.email,
+                              unsubscribe: 'unsubscribe',
+                              unsubscribe_preferences: 'unsubscribe_preferences'
+                            }
+                          });
+                        // sendRequestToHost(reciverEmail,title,results[0].name,results[0].email)
                     })
                 })
             })
@@ -164,11 +179,26 @@ async function queueSub() {
             strSql = `select email from users where user_id = ${user_id}`;
             sqlCon.query(strSql, (err, results) => {
                 if (err) { console.log(err) }
-                const email = results;
-                strSql = `select title from events where event_id = ${event_id}`
+                const email = results[0].email;
+                strSql = `select title,event_date from events where event_id = ${event_id}`
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
-                    sendApproval(email, results[0].title)
+                   // sendApproval(email, results[0].title)
+                   console.log(user_id,email,results[0].title,results[0].event_date)
+                   const Event_Date = (results[0]?.event_date).toISOString() ;
+                   console.log(Event_Date)
+                   novu.trigger('submit-event-approval', {
+                    to: {
+                      subscriberId: user_id+"",
+                      email: email
+                    },
+                    payload: {
+                      title: results[0].title,
+                      unsubscribe: 'unsubscribe',
+                      unsubscribe_preferences: 'unsubscribe_preferences',
+                      sendAt: Event_Date
+                    }
+                  });
                 })
             })
         }
