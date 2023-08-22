@@ -3,7 +3,7 @@ const router = express.Router();
 const { Subject } = require("rxjs")
 const queue = new Subject();
 const sqlCon = require("../db/sqlConnect");
-const { auth } = require("../middleware/auth");
+const { auth,authAdmin } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
 const { sendRequestToHost, sendApproval } = require("../middleware/sendGrid")
 const novu = require("../middleware/notification")
@@ -63,6 +63,15 @@ router.get("/users", async (req, res) => {
 router.get("/users/count/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
     const strSql = `SELECT count(*) current_paticipants,(SELECT max_paticipants from events  where event_id=${event_id}) max_paticipants FROM users_events where event_id=${event_id}`;
+    sqlCon.query(strSql, (err, results) => {
+        if (err) { return res.json(err) }
+        res.json(results)
+    })
+})
+
+router.get("/users/getUserEvents/:id", authAdmin, async (req, res) => {
+    const user_id = Number(req.params.user_id);
+    const strSql = `SELECT * FROM events where events.event_id in (SELECT event_id FROM users_events where user_id=${user_id})`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
@@ -154,7 +163,6 @@ async function queueSub() {
                     const title = results[0]?.title;
                     strSql = `select email,name from users where user_id = ${user_id}`
                     sqlCon.query(strSql, (err, results) => {
-                        console.log("dsfgdsg")
                         if (err) { console.log(err) }
                         novu.trigger('send-join-request-to-host', {
                             to: {
