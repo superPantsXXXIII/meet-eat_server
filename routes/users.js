@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const sqlCon = require("../db/sqlConnect");
-const { validateUser, validateLogin, createToken } = require("../models/userModel");
+const { validateUser, validateLogin, createToken,validateEmailSent } = require("../models/userModel");
 const { auth } = require("../middleware/auth");
 const novu = require("../middleware/notification");
 const { async } = require("rxjs");
+const { UserSend } = require("../middleware/sendGrid")
 
 router.get("/", async (req, res) => {
   const strSql = `SELECT user_id,name,email,role FROM users `;
@@ -155,5 +156,14 @@ router.delete("/:user_id", auth, async (req, res) => {
 //     res.json(results);
 //   })
 // })
+
+router.post("/sendMail", auth, async (req, res) => {
+  const validBody = validateEmailSent(req.body);
+  if (validBody.error) {
+    return res.status(400).json(validBody.error.details);
+  }
+  UserSend(req.body.email,req.body.subject,req.body.text)
+})
+
 
 module.exports = router;

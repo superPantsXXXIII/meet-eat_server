@@ -2,13 +2,13 @@ const sgMail = require('@sendgrid/mail')
 const { config } = require('../secret/config')
 sgMail.setApiKey(config.sg_api_key)
 
-exports.testSend = () => {
+exports.UserSend = (email,subject,text) => {
     const msg = {
-        to: config.sg_sender, // Change to your recipient
+        to: email, // Change to your recipient
         from: config.sg_sender, // Change to your verified sender
-        subject: 'Sending with SendGrid is Fun',
-        text: 'and easy to do anywhere, even with Node.js',
-        html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+        subject,
+        text
+        // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
     }
 
     sgMail.send(msg).then((response) => {
