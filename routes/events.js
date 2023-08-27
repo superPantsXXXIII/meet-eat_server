@@ -69,7 +69,7 @@ router.get("/users/count/:event_id", async (req, res) => {
     })
 })
 
-router.get("/users/getUserEvents/:id", authAdmin, async (req, res) => {
+router.get("/users/getUserEvents/:user_id", authAdmin, async (req, res) => {
     const user_id = Number(req.params.user_id);
     const strSql = `SELECT * FROM events where events.event_id in (SELECT event_id FROM users_events where user_id=${user_id})`;
     sqlCon.query(strSql, (err, results) => {
@@ -192,9 +192,7 @@ async function queueSub() {
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
                    // sendApproval(email, results[0].title)
-                   console.log(user_id,email,results[0].title,results[0].event_date)
                    const Event_Date = (results[0]?.event_date).toISOString() ;
-                   console.log(Event_Date)
                    novu.trigger('submit-event-approval', {
                     to: {
                       subscriberId: user_id+"",
