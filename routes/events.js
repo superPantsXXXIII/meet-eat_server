@@ -39,7 +39,7 @@ router.get("/forShow", async (req, res) => {
 
 router.get("/single/:event_id", async (req, res) => {
     const event_id = Number(req.params.event_id);
-    const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id=${event_id}) current_paticipants FROM events where event_id=${event_id}`;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events where event_id=${event_id}) current_paticipants,(SELECT user_id FROM users_events where event_id=${event_id} and host = 1) host_id FROM events where event_id=${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
@@ -189,8 +189,8 @@ async function queueSub() {
             strSql = `select email from users where user_id = ${user_id}`;
             sqlCon.query(strSql, (err, results) => {
                 if (err) { console.log(err) }
-                const email = results[0].email;
-                strSql = `select title,event_date from events where event_id = ${event_id}`
+                const email = results[0]?.email;
+                strSql = `select title,event_date,city,adress from events where event_id = ${event_id}`
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
                    // sendApproval(email, results[0].title)
@@ -201,7 +201,9 @@ async function queueSub() {
                       email: email
                     },
                     payload: {
-                      title: results[0].title,
+                      title: results[0]?.title,
+                      adress: results[0]?.adress,
+                      city: results[0]?.city,
                       unsubscribe: 'unsubscribe',
                       unsubscribe_preferences: 'unsubscribe_preferences',
                       sendAt: Event_Date
