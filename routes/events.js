@@ -19,7 +19,8 @@ router.get("/", async (req, res) => {
 
 router.get("/loggedIn/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id}) order by event_date`;
+    const orderDate = req.query.date?"order by event_date":"";
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id}) ${orderDate}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
