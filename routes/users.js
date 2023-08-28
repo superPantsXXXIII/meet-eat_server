@@ -162,7 +162,15 @@ router.post("/sendMail", auth, async (req, res) => {
   if (validBody.error) {
     return res.status(400).json(validBody.error.details);
   }
-  UserSend(req.body.email,req.body.subject,req.body.text)
+ 
+  try{
+    UserSend(req.body.email,req.body.subject,req.body.text)
+    res.json("email sent")
+  }
+  catch(err){
+    console.log(err);
+    res.status(502).json({err})
+  }
 })
 
 
