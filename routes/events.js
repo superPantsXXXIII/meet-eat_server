@@ -71,7 +71,7 @@ router.get("/users/count/:event_id", async (req, res) => {
 
 router.get("/users/getUserEvents/:user_id", authAdmin, async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const strSql = `SELECT * FROM events where events.event_id in (SELECT event_id FROM users_events where user_id=${user_id} nad host = 1)`;
+    const strSql = `SELECT * FROM events where events.event_id in (SELECT event_id FROM users_events where user_id=${user_id} and host = 1)`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         res.json(results)
