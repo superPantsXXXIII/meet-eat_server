@@ -175,11 +175,9 @@ async function queueSub() {
                               title: title,
                               name: results[0]?.name,
                               email: results[0]?.email,
-                              unsubscribe: 'unsubscribe',
-                              unsubscribe_preferences: 'unsubscribe_preferences'
                             }
                           });
-                        // sendRequestToHost(reciverEmail,title,results[0].name,results[0].email)
+                        sendRequestToHost(reciverEmail,title,results[0].name,results[0].email);
                     })
                 })
             })
