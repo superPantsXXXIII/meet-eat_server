@@ -10,7 +10,7 @@ const novu = require("../middleware/notification")
 queueSub();
 
 router.get("/", async (req, res) => {
-    const orderDate = req.query.date?"order by event_date":"";
+    const orderDate = req.query.date?"order by event_date asc":"";
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_date > now() ${orderDate}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
 
 router.get("/loggedIn/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const orderDate = req.query.date?"order by event_date":"";
+    const orderDate = req.query.date?"order by event_date asc":"";
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id}) and event_date > now() ${orderDate}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
