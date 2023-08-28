@@ -10,7 +10,7 @@ const novu = require("../middleware/notification")
 queueSub();
 
 router.get("/", async (req, res) => {
-    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events `;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events order by event_date`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
 
 router.get("/loggedIn/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id})`;
+    const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id}) order by event_date`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
         res.json(results);
