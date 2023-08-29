@@ -3,14 +3,14 @@ const router = express.Router();
 const { Subject } = require("rxjs")
 const queue = new Subject();
 const sqlCon = require("../db/sqlConnect");
-const { auth,authAdmin } = require("../middleware/auth");
+const { auth, authAdmin } = require("../middleware/auth");
 const { validateEvent } = require("../models/eventModel");
 const { sendRequestToHost, sendApproval } = require("../middleware/sendGrid")
 const novu = require("../middleware/notification")
 queueSub();
 
 router.get("/", async (req, res) => {
-    const orderDate = req.query.date?"order by event_date asc":"";
+    const orderDate = req.query.date ? "order by event_date asc" : "";
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_date > now() ${orderDate}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
 
 router.get("/loggedIn/:user_id", async (req, res) => {
     const user_id = Number(req.params.user_id);
-    const orderDate = req.query.date?"order by event_date asc":"";
+    const orderDate = req.query.date ? "order by event_date asc" : "";
     const strSql = `SELECT *,(SELECT count(*) FROM users_events WHERE event_id = events.event_id) current_particepants FROM events where event_id not in (select event_id from users_events where user_id = ${user_id}) and event_date > now() ${orderDate}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err); }
@@ -159,6 +159,7 @@ async function queueSub() {
                 if (err) { console.log(err) }
                 const reciverEmail = results[0]?.email;
                 const reciverId = results[0]?.user_id;
+                console.log(reciverEmail);
                 strSql = `select title from events where event_id = ${event_id}`
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
@@ -168,16 +169,16 @@ async function queueSub() {
                         if (err) { console.log(err) }
                         novu.trigger('send-join-request-to-host', {
                             to: {
-                              subscriberId: reciverId+"",
-                              email: reciverEmail
+                                subscriberId: reciverId + "",
+                                email: reciverEmail
                             },
                             payload: {
-                              title: title,
-                              name: results[0]?.name,
-                              email: results[0]?.email,
+                                title: title,
+                                name: results[0]?.name,
+                                email: results[0]?.email,
                             }
-                          });
-                        sendRequestToHost(reciverEmail,title,results[0].name,results[0].email);
+                        });
+                        sendRequestToHost(reciverEmail, title, results[0].name, results[0].email);
                     })
                 })
             })
@@ -191,22 +192,22 @@ async function queueSub() {
                 strSql = `select title,event_date,city,adress from events where event_id = ${event_id}`
                 sqlCon.query(strSql, (err, results) => {
                     if (err) { console.log(err) }
-                   // sendApproval(email, results[0].title)
-                   const Event_Date = (results[0]?.event_date).toISOString() ;
-                   novu.trigger('submit-event-approval', {
-                    to: {
-                      subscriberId: user_id+"",
-                      email: email
-                    },
-                    payload: {
-                      title: results[0]?.title,
-                      adress: results[0]?.adress,
-                      city: results[0]?.city,
-                      unsubscribe: 'unsubscribe',
-                      unsubscribe_preferences: 'unsubscribe_preferences',
-                      sendAt: Event_Date
-                    }
-                  });
+                    // sendApproval(email, results[0].title)
+                    const Event_Date = (results[0]?.event_date).toISOString();
+                    novu.trigger('submit-event-approval', {
+                        to: {
+                            subscriberId: user_id + "",
+                            email: email
+                        },
+                        payload: {
+                            title: results[0]?.title,
+                            adress: results[0]?.adress,
+                            city: results[0]?.city,
+                            unsubscribe: 'unsubscribe',
+                            unsubscribe_preferences: 'unsubscribe_preferences',
+                            sendAt: Event_Date
+                        }
+                    });
                 })
             })
         }
@@ -229,14 +230,22 @@ router.put("/:event_id", async (req, res) => {
     })
 })
 
-router.patch("/users/approve", async (req, res) => {
+router.patch("/users/approve",auth, async (req, res) => {
     const user_id = Number(req.body.user_id);
     const event_id = Number(req.body.event_id);
-    const strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
+    let strSql = `select user_id from users_events where host =`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
-        queue.next({ event_id, reqType: "backAsApproved", user_id })
-        res.json(results)
+        if(results[0].user_id == req.tokenData.user_id){
+        strSql = `Update users_events set approved=1 where user_id = ${user_id} and event_id = ${event_id}`;
+        sqlCon.query(strSql, (err, results) => {
+            if (err) { return res.json(err) }
+            queue.next({ event_id, reqType: "backAsApproved", user_id })
+            res.json(results)
+        })}
+        else{
+            res.json({ err: "unauthorized request" });
+        }
     })
 })
 
@@ -287,18 +296,18 @@ router.get("/testing_sg", async (req, res) => {
 router.post("/testing_n", async (req, res) => {
     const user_id = Number(req.body.user_id);
     const email = req.body.email;
-    await novu.trigger('event-reminder', {          
-            to: {
-                subscriberId: user_id,
-                email: email
-              },
-              payload: {
-                title: `adam's bbq`,
-                eventName: '<REPLACE_WITH_DATA>',
-                eventDate: '<REPLACE_WITH_DATA>',
-                rsvpLink: '<REPLACE_WITH_DATA>'
-              }
-          });
+    await novu.trigger('event-reminder', {
+        to: {
+            subscriberId: user_id,
+            email: email
+        },
+        payload: {
+            title: `adam's bbq`,
+            eventName: '<REPLACE_WITH_DATA>',
+            eventDate: '<REPLACE_WITH_DATA>',
+            rsvpLink: '<REPLACE_WITH_DATA>'
+        }
+    });
     return res.json("email sent")
 })
 
