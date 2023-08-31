@@ -233,7 +233,7 @@ router.put("/:event_id", async (req, res) => {
 router.patch("/users/approve",auth, async (req, res) => {
     const user_id = Number(req.body.user_id);
     const event_id = Number(req.body.event_id);
-    let strSql = `select user_id from users_events where host =`;
+    let strSql = `select user_id from users_events where host = 1 and event_id = ${event_id}`;
     sqlCon.query(strSql, (err, results) => {
         if (err) { return res.json(err) }
         if(results[0].user_id == req.tokenData.user_id){
