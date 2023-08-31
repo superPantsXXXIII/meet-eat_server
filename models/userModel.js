@@ -8,14 +8,13 @@ const {config} = require("../secret/config")
 exports.validateUser = (_reqBody) => {
     const joiSchema = Joi.object({
         name: Joi.string().min(2).max(150).required(),
-        // email() -> בודק שהמייל תקין עם שטרודל נקודה ועוד
         email: Joi.string().min(2).max(200).email().required(),
         password: Joi.string().min(3).max(150).required()
     })
     return joiSchema.validate(_reqBody);
 }
 
-exports.createToken = (_id, _role = "user") => {
+exports.createToken = (_id, _role) => {
     return jwt.sign({user_id:_id, role: _role },config.secret, { expiresIn: "60000mins" });
 }
 
@@ -23,6 +22,16 @@ exports.validateLogin = (_reqBody) => {
     const joiSchema = Joi.object({
         email: Joi.string().min(2).max(200).email().required(),
         password: Joi.string().min(3).max(150).required()
+    })
+
+    return joiSchema.validate(_reqBody);
+}
+
+exports.validateEmailSent = (_reqBody) => {
+    const joiSchema = Joi.object({
+        email: Joi.string().min(2).max(200).email().required(),
+        subject: Joi.string().min(3).max(150).required(),
+        text: Joi.string().min(3).max(500).required(),
     })
 
     return joiSchema.validate(_reqBody);
